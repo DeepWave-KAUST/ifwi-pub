@@ -1,0 +1,8 @@
+# Python >= 3.10, a CUDA GPU, and the sweep differentiable wave solver.
+#
+# sweep is NOT on PyPI -- it is provided by the DeepWave/geophyai environment
+# (our lab conda env: ifwitorch). Everything below is already present there.
+torch
+numpy
+matplotlib
+jupyter
