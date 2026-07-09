@@ -15,10 +15,14 @@ import numpy as np
 
 # (model, name) -> path to a 2D float .npy
 MODELS = {
-    ("overthrust", "true"):   "overthrust_true.npy",
-    ("overthrust", "smooth"): "overthrust_smooth.npy",
-    ("marmousi", "true"):     "marmousi_true.npy",
-    ("marmousi", "smooth"):   "marmousi_smooth.npy",
+    ("overthrust", "true"):     "overthrust_true.npy",
+    ("overthrust", "smooth"):   "overthrust_smooth.npy",
+    ("marmousi", "true"):       "marmousi_true.npy",
+    ("marmousi", "smooth"):     "marmousi_smooth.npy",
+    ("marmousi2_vp", "true"):   "marmousi2_true_vp.npy",
+    ("marmousi2_vp", "smooth"): "marmousi2_smooth_vp.npy",
+    ("marmousi2_z", "true"):    "marmousi2_true_z.npy",
+    ("marmousi2_z", "smooth"):  "marmousi2_smooth_z.npy",
 }
 OUT = os.path.join(os.path.dirname(__file__), "..", "src", "models.py")
 
@@ -26,8 +30,9 @@ _HEADER = '''"""Embedded Overthrust & Marmousi velocity models for ifwi-pub.
 
 Same scheme as sweep's datasets (zlib-9 + base85 packed into a .py, no external
 files), but stored as **float32** so the models are bit-exact (lossless) and the
-reproduction is unchanged. Use overthrust(name) / marmousi(name) -> float32 array;
-name is "true" or "smooth".
+reproduction is unchanged. Use overthrust(name) / marmousi(name) -> float32 vp;
+marmousi2(param, name) -> full Marmousi2 vp or impedance z. name is "true" or
+"smooth".
 """
 import base64
 import zlib
@@ -51,6 +56,14 @@ def overthrust(name="true"):
 def marmousi(name="true"):
     """Marmousi vp (141, 341), float32. name: 'true' | 'smooth'."""
     return _load("marmousi", name)
+
+def marmousi2(param="vp", name="true"):
+    """Full Marmousi2 model (187, 907), float32.
+
+    param: 'vp' (P-wave velocity, m/s) | 'z' (acoustic impedance rho*vp);
+    name:  'true' | 'smooth'.
+    """
+    return _load(f"marmousi2_{param}", name)
 '''
 
 

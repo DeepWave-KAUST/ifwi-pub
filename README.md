@@ -1,24 +1,33 @@
 # ifwi-pub
 
-Reproducible synthetic examples for the *Geophysics* paper
+Reproducible synthetic examples for two companion papers by **Shaowen Wang and
+Tariq Alkhalifah**:
 
-> **Accelerating High Resolution Implicit Full Waveform Inversion**<br>
-> Shaowen Wang and Tariq Alkhalifah
+> **Accelerating High Resolution Implicit Full Waveform Inversion** (*Geophysics*)<br>
+> — the single-parameter velocity examples (Overthrust, Marmousi)
+>
+> **Implicit Full Waveform Inversion Imaging** (*GJI*)<br>
+> — the joint velocity–impedance imaging (IFWIM) example (Marmousi2)
 
 All forward/adjoint modeling runs on the
 [**sweep**](https://github.com/DeepWave-KAUST/sweep) differentiable acoustic
-solver. Each notebook reproduces one of the paper's two synthetic experiments —
-three inversions on one model and the comparison figures:
+solver. The two single-parameter notebooks each reproduce one *Geophysics* experiment —
+three inversions on one model and the comparison figures — and the multiparameter notebook
+reproduces the joint $(v_p, Z)$ imaging example of the *GJI* paper:
 
 | Notebook | Model | Experiments |
 |---|---|---|
 | [`notebooks/pseudo_hessian_overthrust.ipynb`](notebooks/pseudo_hessian_overthrust.ipynb) | Overthrust | conventional FWI · iFWI (SIREN) · iFWI **+ pseudo-Hessian** |
 | [`notebooks/hash_encoding_marmousi.ipynb`](notebooks/hash_encoding_marmousi.ipynb) | Marmousi | conventional FWI · iFWI (SIREN) · iFWI **+ hash encoding** |
+| [`notebooks/multiparameter_marmousi2.ipynb`](notebooks/multiparameter_marmousi2.ipynb) | Marmousi2 | joint $(v_p, Z)$ implicit FWI **imaging** (variable density, hash + multiscale) |
 
-The two experiments were first presented as EAGE extended abstracts, whose methods
-this repository reproduces:
+The two single-parameter methods (which the *Geophysics* paper builds on) were first
+presented as EAGE extended abstracts, reproduced here:
 * *Implicit full waveform inversion with energy-weighted gradient* — DOI [10.3997/2214-4609.202510069](https://doi.org/10.3997/2214-4609.202510069) (pseudo-Hessian / Overthrust)
 * *Multiresolution hash encoding for high resolution implicit full waveform inversion* — DOI [10.3997/2214-4609.202510109](https://doi.org/10.3997/2214-4609.202510109) (hash encoding / Marmousi)
+
+The multiparameter Marmousi2 notebook reproduces the joint velocity–impedance imaging
+example of the *GJI* paper **Implicit Full Waveform Inversion Imaging**.
 
 ## Method
 
@@ -38,6 +47,13 @@ vp(grid) = vp_init + std · net(coords) + mean
   compiled backend fills during the backward pass. (Overthrust example.)
 * **Hash encoding** prepends a native Instant-NGP multiresolution hash-grid
   encoder to the SIREN. (Marmousi example.)
+* **Multiparameter imaging (FWIM)** inverts velocity **and** impedance jointly with a
+  single shared hash + SIREN network (`model_i = init_i + std_i · net(coords)[i]`), driven
+  by the variable-density `AcousticVRZ` solver. A band-pass multiscale schedule
+  (3, 5, 8, all Hz) restarts the network + optimizer at each scale, baking the previous
+  scale's model into the init. (Marmousi2 example.) **Reproduction detail:** the zero-phase
+  band-pass must be a time-domain `filtfilt` (`torchaudio`, fp64) — a frequency-domain
+  `|H|²` multiply leaves a coherent t=0 wrap artefact that destabilises the joint inversion.
 
 Everything except the wave solver is implemented from scratch in
 [`src/ifwi_sweep.py`](src/ifwi_sweep.py): the SIREN network, the multiresolution
@@ -59,9 +75,9 @@ syn = solver(wavelet, sources, receivers, models=[vp], use_boundary_saving=True)
 ## Layout
 
 ```
-src/ifwi_sweep.py     solver wiring + SIREN + hash encoding + pseudo-Hessian + inversion loops
-src/models.py         Overthrust & Marmousi true/smooth vp, embedded (zlib + base85, no .npy files)
-notebooks/            pseudo_hessian_overthrust + hash_encoding_marmousi
+src/ifwi_sweep.py     solver wiring + SIREN + hash encoding + pseudo-Hessian + VRZ restart + filters
+src/models.py         Overthrust/Marmousi vp and Marmousi2 vp+impedance, true/smooth, embedded (zlib+base85)
+notebooks/            pseudo_hessian_overthrust + hash_encoding_marmousi + multiparameter_marmousi2
 figures/              comparison figures written by the notebooks (and cached results, gitignored)
 tools/encode_models.py  regenerates src/models.py from .npy (only needed to update the models)
 ```
@@ -82,9 +98,10 @@ If the build can't auto-detect your GPU, set `TORCH_CUDA_ARCH_LIST` before the
 `pip` command (e.g. `"7.0"` for V100, `"8.0"` for A100, `"8.9"` for RTX 6000 Ada).
 Full notes are in the [sweep docs](https://deepwave-kaust.github.io/sweep/getting-started/installation/).
 
-The notebooks additionally need `torch numpy matplotlib jupyter` (all present in a
-sweep environment; see [`requirements.txt`](requirements.txt)). No model data files
-are needed — the velocity models are embedded in [`src/models.py`](src/models.py).
+The notebooks additionally need `torch numpy scipy matplotlib jupyter` (all present in a
+sweep environment; see [`requirements.txt`](requirements.txt)); the multiparameter notebook
+also uses `torchaudio` for the zero-phase band-pass `filtfilt`. No model data files are
+needed — the velocity models are embedded in [`src/models.py`](src/models.py).
 
 ## Running
 
@@ -96,8 +113,8 @@ jupyter lab            # open a notebook and run all cells
 ```
 
 The notebooks ship with `SMOKE = False` (the full paper run — Overthrust 500
-iterations, Marmousi 200) and their results already baked in. Set `SMOKE = True`
-in the config cell for a quick reduced-iteration check. Inversion results are
+iterations, Marmousi 200, Marmousi2 400 = 4 scales × 100). Set `SMOKE = True`
+in the config cell for a quick reduced-iteration check (or set `IFWI_EPOCHS`). Inversion results are
 cached under `figures/cache_*.npz`, so re-running only re-plots (seconds) — delete
 the cache, or change any config value, to recompute. Observed data is generated
 on the fly by the same solver, so no pre-computed data is needed.
