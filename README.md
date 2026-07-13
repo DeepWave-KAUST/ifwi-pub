@@ -6,7 +6,7 @@ Tariq Alkhalifah**:
 > **Accelerating High Resolution Implicit Full Waveform Inversion** (*Geophysics*)<br>
 > — the single-parameter velocity examples (Overthrust, Marmousi)
 >
-> **Implicit Full Waveform Inversion Imaging** (*GJI*)<br>
+> **Implicit Full Waveform Inversion Imaging** (*GJI*, 2026) — DOI [10.1093/gji/ggag277](https://doi.org/10.1093/gji/ggag277)<br>
 > — the joint velocity–impedance imaging (IFWIM) example (Marmousi2)
 
 All forward/adjoint modeling runs on the
@@ -27,7 +27,8 @@ presented as EAGE extended abstracts, reproduced here:
 * *Multiresolution hash encoding for high resolution implicit full waveform inversion* — DOI [10.3997/2214-4609.202510109](https://doi.org/10.3997/2214-4609.202510109) (hash encoding / Marmousi)
 
 The multiparameter Marmousi2 notebook reproduces the joint velocity–impedance imaging
-example of the *GJI* paper **Implicit Full Waveform Inversion Imaging**.
+example of the *GJI* paper **Implicit Full Waveform Inversion Imaging**
+(DOI [10.1093/gji/ggag277](https://doi.org/10.1093/gji/ggag277)).
 
 ## Method
 
@@ -118,3 +119,61 @@ in the config cell for a quick reduced-iteration check (or set `IFWI_EPOCHS`). I
 cached under `figures/cache_*.npz`, so re-running only re-plots (seconds) — delete
 the cache, or change any config value, to recompute. Observed data is generated
 on the fly by the same solver, so no pre-computed data is needed.
+
+## Citation
+
+If this repository is useful in your research, please cite the relevant paper(s):
+
+**Journal articles**
+* S. Wang and T. Alkhalifah, *Implicit Full Waveform Inversion Imaging* — *Geophysical Journal International*, 2026 — DOI [10.1093/gji/ggag277](https://doi.org/10.1093/gji/ggag277) (multiparameter IFWIM / Marmousi2)
+* S. Wang and T. Alkhalifah, *Accelerating High Resolution Implicit Full Waveform Inversion* — *Geophysics* (under review) — single-parameter velocity: pseudo-Hessian + hash encoding
+
+**Conference abstracts**
+* S. Wang and T. Alkhalifah, *Implicit full waveform inversion with energy-weighted gradient* — EAGE Annual Conference & Exhibition, 2025 — DOI [10.3997/2214-4609.202510069](https://doi.org/10.3997/2214-4609.202510069) (pseudo-Hessian / Overthrust)
+* S. Wang, M. Ravasi and T. Alkhalifah, *Multiresolution hash encoding for high resolution implicit full waveform inversion* — EAGE Annual Conference & Exhibition, 2025 — DOI [10.3997/2214-4609.202510109](https://doi.org/10.3997/2214-4609.202510109) (hash encoding / Marmousi)
+* S. Wang and T. Alkhalifah, *Accelerating the convergence of implicit FWI and LSRTM with a field data application* — International Meeting for Applied Geoscience & Energy (IMAGE), 2025 — DOI [10.1190/image2025-4302395.1](https://doi.org/10.1190/image2025-4302395.1)
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{wang2026imaging,
+  author  = {Wang, Shaowen and Alkhalifah, Tariq},
+  title   = {Implicit Full Waveform Inversion Imaging},
+  journal = {Geophysical Journal International},
+  year    = {2026},
+  doi     = {10.1093/gji/ggag277}
+}
+
+@article{wang_accelerating,
+  author  = {Wang, Shaowen and Alkhalifah, Tariq},
+  title   = {Accelerating High Resolution Implicit Full Waveform Inversion},
+  journal = {Geophysics},
+  note    = {Under review}
+}
+
+@inproceedings{wang2025energyweighted,
+  author    = {Wang, Shaowen and Alkhalifah, Tariq},
+  title     = {Implicit Full Waveform Inversion with Energy-Weighted Gradient},
+  booktitle = {EAGE Annual Conference \& Exhibition},
+  year      = {2025},
+  doi       = {10.3997/2214-4609.202510069}
+}
+
+@inproceedings{wang2025hash,
+  author    = {Wang, Shaowen and Ravasi, Matteo and Alkhalifah, Tariq},
+  title     = {Multiresolution Hash Encoding for High Resolution Implicit Full Waveform Inversion},
+  booktitle = {EAGE Annual Conference \& Exhibition},
+  year      = {2025},
+  doi       = {10.3997/2214-4609.202510109}
+}
+
+@inproceedings{wang2025lsrtm,
+  author    = {Wang, Shaowen and Alkhalifah, Tariq},
+  title     = {Accelerating the Convergence of Implicit {FWI} and {LSRTM} with a Field Data Application},
+  booktitle = {International Meeting for Applied Geoscience \& Energy (IMAGE)},
+  year      = {2025},
+  doi       = {10.1190/image2025-4302395.1}
+}
+```
+</details>
