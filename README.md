@@ -86,18 +86,14 @@ tools/encode_models.py  regenerates src/models.py from .npy (only needed to upda
 ## Installation
 
 A CUDA GPU is required — this repo drives the solver with `impl='c'` (the compiled
-CUDA path). Install the **sweep** solver ([`sweep-solver`](https://github.com/DeepWave-KAUST/sweep))
-from source, building its CUDA extension:
+CUDA path). Install the **sweep** differentiable solver from PyPI:
 
 ```bash
-git clone https://github.com/DeepWave-KAUST/sweep.git
-cd sweep
-SWEEP_BUILD_CUDA=1 pip install -v ".[cuda]" --no-build-isolation
+pip install sweepx
 ```
 
-If the build can't auto-detect your GPU, set `TORCH_CUDA_ARCH_LIST` before the
-`pip` command (e.g. `"7.0"` for V100, `"8.0"` for A100, `"8.9"` for RTX 6000 Ada).
-Full notes are in the [sweep docs](https://deepwave-kaust.github.io/sweep/getting-started/installation/).
+This provides the `sweep` package used by the code. Full notes are in the
+[sweep docs](https://deepwave-kaust.github.io/sweep/getting-started/installation/).
 
 The notebooks additionally need `torch numpy scipy matplotlib jupyter` (all present in a
 sweep environment; see [`requirements.txt`](requirements.txt)); the multiparameter notebook
@@ -119,6 +115,10 @@ in the config cell for a quick reduced-iteration check (or set `IFWI_EPOCHS`). I
 cached under `figures/cache_*.npz`, so re-running only re-plots (seconds) — delete
 the cache, or change any config value, to recompute. Observed data is generated
 on the fly by the same solver, so no pre-computed data is needed.
+
+## License
+
+Released under the MIT License — see [`LICENSE`](LICENSE).
 
 ## Citation
 

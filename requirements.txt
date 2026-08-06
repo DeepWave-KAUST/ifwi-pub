@@ -1,7 +1,9 @@
-# Python >= 3.10, a CUDA GPU, and the sweep differentiable wave solver.
+# Python >= 3.10 and a CUDA GPU.
 #
-# sweep is NOT on PyPI -- it is provided by the DeepWave/geophyai environment
-# (our lab conda env: ifwitorch). Everything below is already present there.
+# The sweep differentiable wave solver is on PyPI as `sweepx`
+# (it provides the `sweep` package imported by the code):
+#     pip install sweepx
+sweepx            # differentiable acoustic wave solver (imported as `sweep`)
 torch
 torchaudio        # zero-phase band-pass filtfilt (multiparameter notebook)
 numpy
