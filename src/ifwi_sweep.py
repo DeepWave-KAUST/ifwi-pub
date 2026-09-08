@@ -29,9 +29,13 @@ Pseudo-Hessian: the velocity-grid gradient is divided by the
 square-root of the source x receiver illumination (sqrt(sill * rill)) and the
 preconditioned gradient is then back-propagated into the network parameters.
 sill / rill are read straight off the sweep solver
-(``solver.source_illumination`` / ``solver.receiver_illumination``), which the
-compiled backend fills during the backward pass whenever the model requires a
-gradient.
+(``solver.source_illumination`` / ``solver.receiver_illumination``).  The
+compiled backend fills them during the backward pass only when the extra grid
+pass is requested -- ``solver.compute_illumination = True``, which
+``run_inversion`` sets for you whenever ``use_ph=True``.  It has been opt-in
+since sweep 2026-06 (it costs ~1/3 of the backward), and the attributes read
+back ``None`` without it.  Illumination is an ``impl='c'`` feature: the eager
+backend does not compute it.
 """
 from __future__ import annotations
 
@@ -140,13 +144,14 @@ def lowpass_zerophase(x, dt, fc, order=3, time_axis=1):
     (``torchaudio.functional.filtfilt``) -- differentiable, GPU-native, and matched to scipy
     ``sosfiltfilt`` / the reference ``filter_jax`` (``jax_filtfilt``) to ~1.8%.
 
-    NOTE: a frequency-domain ``|H(f)|**2`` multiply (the earlier implementation, and
-    sweep-preproc's ``bandpass_torch``) does NOT match ``filtfilt`` -- it is a *circular*
-    convolution that folds the trace tail back to t=0 as a coherent artefact and is ~7% off
-    for a narrow band even after zero-padding; that artefact injects a spurious near-source
-    gradient that destabilises the joint (vp, z) inversion. The time-domain IIR here does
-    not. ``fc``: ``(lo, hi)`` band-pass, scalar low-pass, or ``None`` (pass-through). Sweep
-    receiver gathers are (nshots, nt, nrec, 1), hence the default ``time_axis=1``.
+    NOTE: a frequency-domain ``|H(f)|**2`` multiply (the earlier implementation, and the
+    ``bandpass_torch`` of sweep's preprocessing helpers) does NOT match ``filtfilt`` -- it
+    is a *circular* convolution that folds the trace tail back to t=0 as a coherent
+    artefact and is ~7% off for a narrow band even after zero-padding; that artefact
+    injects a spurious near-source gradient that destabilises the joint (vp, z) inversion.
+    The time-domain IIR here does not. ``fc``: ``(lo, hi)`` band-pass, scalar low-pass, or
+    ``None`` (pass-through). Sweep receiver gathers are (nshots, nt, nrec, 1), hence the
+    default ``time_axis=1``.
     """
     if fc is None:
         return x
@@ -428,6 +433,13 @@ def run_inversion(solver, wavelet, sources, receivers, obs, model_fn, params, *,
     (one batched=1 solve per shot); per_shot_ill=False uses the cheaper batch
     approximation ``sqrt(sum sill * sum rill)`` from a single batched solve.
     """
+    # The source/receiver illumination is an extra ~1/3-of-backward grid pass and has
+    # been OPT-IN since sweep 2026-06: without this flag the solver leaves
+    # ``source_illumination`` / ``receiver_illumination`` at None and the preconditioner
+    # below fails with a TypeError.  Assigned rather than only switched on, so a solver
+    # reused across experiments does not keep paying for an illumination the
+    # conventional-FWI / plain-iFWI baselines never read.
+    solver.compute_illumination = bool(use_ph)
     rng = np.random.default_rng(seed)
     opt = torch.optim.Adam(params, lr=lr, eps=eps)
     sched = (torch.optim.lr_scheduler.ExponentialLR(opt, lr_decay)

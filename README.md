@@ -44,8 +44,10 @@ vp(grid) = vp_init + std · net(coords) + mean
 * **Pseudo-Hessian** preconditions the velocity-grid gradient by the
   source/receiver illumination — `g ← g / sqrt(s·r)` — before back-propagating it
   into the network. `s` and `r` are read directly off the sweep solver
-  (`solver.source_illumination` / `solver.receiver_illumination`), which the
-  compiled backend fills during the backward pass. (Overthrust example.)
+  (`solver.source_illumination` / `solver.receiver_illumination`). The compiled
+  backend fills them only when the extra grid pass is requested with
+  `solver.compute_illumination = True` — it has been opt-in since sweep 2026-06,
+  and `run_inversion` sets it for you whenever `use_ph=True`. (Overthrust example.)
 * **Hash encoding** prepends a native Instant-NGP multiresolution hash-grid
   encoder to the SIREN. (Marmousi example.)
 * **Multiparameter imaging (FWIM)** inverts velocity **and** impedance jointly with a
@@ -70,8 +72,21 @@ saving:
 ```python
 solver = PropTorch(Acoustic(spatial_order=..., device="cuda"), shape, dh, dt,
                    abcn=..., source_type=["h1"], receiver_type=["h1"], impl="c")
+solver.compute_illumination = True   # pseudo-Hessian only (run_inversion sets this for you)
 syn = solver(wavelet, sources, receivers, models=[vp], use_boundary_saving=True)  # 'bs' mode
 ```
+
+Boundary saving is already the `impl='c'` default, so the `use_boundary_saving=True`
+above is explicit rather than necessary. Since sweep 0.2.0 the gradient-memory mode is
+one three-way choice and the documented spelling is
+`PropTorch(..., memory=MemoryOptions(strategy="boundary"))`
+(`from sweep.propagator.options import MemoryOptions`); the legacy switch used here
+resolves to the same mode. If the boundary ring does not fit your GPU, pass
+`BoundaryOptions(storage="cpu")` inside it.
+
+`free_surface=` must be a **constructor** argument (the multiparameter notebook uses
+`free_surface=True`): sweep 0.2.0 rejects setting it after construction, because the
+padded grid and the compiled kernels are fixed at build time.
 
 ## Layout
 
@@ -89,11 +104,21 @@ A CUDA GPU is required — this repo drives the solver with `impl='c'` (the comp
 CUDA path). Install the **sweep** differentiable solver from PyPI:
 
 ```bash
-pip install sweepx
+pip install "sweep-solver>=0.2,<0.3"            # provides the `sweep` package
+python -c "import sweep; sweep.precompile()"    # build the CUDA backend now (one-time, ~3-5 min)
 ```
 
-This provides the `sweep` package used by the code. Full notes are in the
-[sweep docs](https://deepwave-kaust.github.io/sweep/getting-started/installation/).
+The solver ships the CUDA *sources* and compiles them against your own PyTorch, for your
+GPU's architecture only, then caches the result in `~/.cache/torch_extensions`. That needs
+`nvcc >= 12.4` (a system install, your cluster's `module load cuda`, or
+`conda install -c nvidia cuda-toolkit`). The `precompile()` line does the build up front;
+drop it and it happens — silently, for several minutes — inside the first notebook cell
+that calls the solver. Without a usable `nvcc` the solver falls back to the pure-PyTorch
+`impl='eager'` path with a warning: that is 10-30x slower **and has no illumination**, so
+the pseudo-Hessian experiment cannot run there. The notebooks print `solver.impl`; check it
+says `c`. `pip install sweepx` installs the same solver through the umbrella
+distribution, plus the `sweep-agent` companion this repo does not use. Full notes are in
+the [sweep docs](https://sweepx.deepwave.group/solver/getting-started/installation/).
 
 The notebooks additionally need `torch numpy scipy matplotlib jupyter` (all present in a
 sweep environment; see [`requirements.txt`](requirements.txt)); the multiparameter notebook
@@ -116,6 +141,11 @@ cached under `figures/cache_*.npz`, so re-running only re-plots (seconds) — de
 the cache, or change any config value, to recompute. Observed data is generated
 on the fly by the same solver, so no pre-computed data is needed.
 
+The cache key is the config signature only, **not** the solver version: a cache written
+by an older `sweep` is replayed verbatim, and the notebook prints `[cache] loaded ...`
+when that happens. After upgrading the solver, delete `figures/cache_*.npz` so the
+inversions actually re-run.
+
 ## License
 
 Released under the MIT License — see [`LICENSE`](LICENSE).
@@ -133,10 +163,23 @@ If this repository is useful in your research, please cite the relevant paper(s)
 * S. Wang, M. Ravasi and T. Alkhalifah, *Multiresolution hash encoding for high resolution implicit full waveform inversion* — EAGE Annual Conference & Exhibition, 2025 — DOI [10.3997/2214-4609.202510109](https://doi.org/10.3997/2214-4609.202510109) (hash encoding / Marmousi)
 * S. Wang and T. Alkhalifah, *Accelerating the convergence of implicit FWI and LSRTM with a field data application* — International Meeting for Applied Geoscience & Energy (IMAGE), 2025 — DOI [10.1190/image2025-4302395.1](https://doi.org/10.1190/image2025-4302395.1)
 
+**Solver**
+* S. Wang and T. Alkhalifah, *SWEEP: A Unified Solver Framework for Differentiable Wave Physics* — arXiv [2604.14189](https://arxiv.org/abs/2604.14189)
+
 <details>
 <summary>BibTeX</summary>
 
 ```bibtex
+@misc{wang2026sweep,
+  title  = {{SWEEP} ({S}eismic {W}ave {E}quation {E}xploration {P}latform):
+            A Unified Solver Framework for Differentiable Wave Physics},
+  author = {Wang, Shaowen and Alkhalifah, Tariq},
+  year   = {2026},
+  eprint = {2604.14189},
+  archivePrefix = {arXiv},
+  url    = {https://arxiv.org/abs/2604.14189},
+}
+
 @article{wang2026imaging,
   author  = {Wang, Shaowen and Alkhalifah, Tariq},
   title   = {Implicit Full Waveform Inversion Imaging},
