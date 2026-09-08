@@ -1,9 +1,12 @@
-# Python >= 3.10 and a CUDA GPU.
+# Python >= 3.10, a CUDA GPU and nvcc >= 12.4 (the solver JIT-compiles its CUDA
+# backend against your own torch on first use of impl='c').
 #
-# The sweep differentiable wave solver is on PyPI as `sweepx`
-# (it provides the `sweep` package imported by the code):
-#     pip install sweepx
-sweepx            # differentiable acoustic wave solver (imported as `sweep`)
+# The sweep differentiable wave solver is on PyPI. `sweep-solver` is the solver
+# alone (it provides the `sweep` package imported by the code); `sweepx` is the
+# umbrella distribution and additionally pulls in `sweep-agent`, which this repo
+# does not use. The version is pinned to the 0.2 line the results were produced
+# with.
+sweep-solver>=0.2,<0.3   # differentiable wave solver (imported as `sweep`)
 torch
 torchaudio        # zero-phase band-pass filtfilt (multiparameter notebook)
 numpy
